@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Todo List</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #45a049;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeIn 1s ease-in;
+        }
+
+        #currentDateTime {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .todo-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .todo-form:hover {
+            transform: translateY(-5px);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        input[type="text"], input[type="datetime-local"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .todo-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .todo-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease forwards;
+            opacity: 0;
+        }
+
+        .todo-item.completed {
+            background: #f0f0f0;
+            text-decoration: line-through;
+        }
+
+        .actions button {
+            margin-left: 10px;
+            padding: 5px 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Smart Todo List</h1>
+            <div id="currentDateTime"></div>
+        </div>
+
+        <form class="todo-form" id="todoForm">
+            <div class="form-group">
+                <input type="text" id="taskInput" placeholder="Enter your task" required>
+            </div>
+            <div class="form-group">
+                <input type="datetime-local" id="taskDateTime" required>
+            </div>
+            <button type="submit">Add Task</button>
+        </form>
+
+        <ul class="todo-list" id="todoList"></ul>
+    </div>
+
+    <script>
+        // Local Storage Management
+        const STORAGE_KEY = 'todoItems';
+
+        function saveTodos(todos) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+        }
+
+        function loadTodos() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        }
+
+        // Todo Management
+        let todos = loadTodos();
+
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentDateTime').textContent = 
+                now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+        }
+
+        function renderTodos() {
+            const todoList = document.getElementById('todoList');
+            todoList.innerHTML = '';
+            
+            todos.forEach((todo, index) => {
+                const li = document.createElement('li');
+                li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+                li.style.animationDelay = `${index * 0.1}s`;
+                
+                li.innerHTML = `
+                    <div>
+                        <h3>${todo.text}</h3>
+                        <p>Due: ${new Date(todo.dateTime).toLocaleString()}</p>
+                    </div>
+                    <div class="actions">
+                        <button onclick="toggleComplete(${index})">${todo.completed ? 'Undo' : 'Complete'}</button>
+                        <button onclick="deleteTodo(${index})">Delete</button>
+                    </div>
+                `;
+                
+                todoList.appendChild(li);
+            });
+        }
+
+        function addTodo(text, dateTime) {
+            todos.push({
+                text,
+                dateTime,
+                completed: false,
+                createdAt: new Date().toISOString()
+            });
+            saveTodos(todos);
+            renderTodos();
+        }
+
+        function deleteTodo(index) {
+            todos.splice(index, 1);
+            saveTodos(todos);
+            renderTodos();
+        }
+
+        function toggleComplete(index) {
+            todos[index].completed = !todos[index].completed;
+            saveTodos(todos);
+            renderTodos();
+        }
+
+        // Event Listeners
+        document.getElementById('todoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const taskInput = document.getElementById('taskInput');
+            const taskDateTime = document.getElementById('taskDateTime');
+            
+            addTodo(taskInput.value, taskDateTime.value);
+            
+            taskInput.value = '';
+            taskDateTime.value = '';
+        });
+
+        // Initialize
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+        renderTodos();
+
+    </script>
+</body>
+</html>
